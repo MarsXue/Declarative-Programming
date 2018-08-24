@@ -7,6 +7,7 @@ module Proj1 (Person, parsePerson, height, hair, sex,
               GameState, initialGuess, nextGuess, feedback) where
 
 import Data.List
+import Data.Ord
 
 data Person = Person Height Hair Sex
     deriving (Show, Eq, Ord)
@@ -26,9 +27,7 @@ data GameState = GameState {guesses :: [[Person]]} deriving (Show)
 
 allLineups :: [[Person]]
 allLineups = [[a, b] | a <- allPersons, b <- allPersons, a < b]
-    where allPersons = [Person h c g | h <- [S, T],
-                                       c <- [B, R, D],
-                                       g <- [M, F]]
+    where allPersons = [Person h c g | h <- [S, T], c <- [B, R, D], g <- [M, F]]
 
 
 checkMatch :: Eq t => [t] -> [t] -> Int
@@ -56,9 +55,7 @@ parsePerson (h:c:g:[])
     | checkValid = Just (Person (read [h]) (read [c]) (read [g]))
     | otherwise = Nothing
         where
-            checkValid = (h == 'S' || h == 'T') &&
-                         (c == 'B' || c == 'R' || c == 'D') &&
-                         (g == 'M' || g == 'F')
+            checkValid = (elem h "ST") && (elem c "BRD") && (elem g "MF")
 
 
 height :: Person -> Height
@@ -72,6 +69,23 @@ hair (Person _ c _) = c
 sex :: Person -> Sex
 sex (Person _ _ g) = g
 
+-- count the frequency
+frequency :: Ord a => [a] -> [Int]
+frequency lst = map (\x -> length x) . group . sort $ lst
+
+-- calculate the expected number
+calculate :: [Int] -> Double
+calculate lst = (fromIntegral (sum [x * x | x <- lst])) / (fromIntegral (sum lst))
+
+calculateGuess guesses = findMin [calculate (frequency [feedback x y | y <- guesses]) | x <- guesses]
+
+-- find the index of minimum value
+findMin :: Ord a => [a] -> Int
+findMin [] = 0
+findMin xs
+    | head xs == minimum xs = 0
+    | otherwise = 1 + findMin (tail xs)
+
 
 feedback :: [Person] -> [Person] -> (Int, Int, Int, Int)
 feedback (a:b:[]) (x:y:[]) = (np, nh, nc, ng)
@@ -83,13 +97,15 @@ feedback (a:b:[]) (x:y:[]) = (np, nh, nc, ng)
 
 
 initialGuess :: ([Person], GameState)
-initialGuess =
-    let guess = head allLineups
-    in (guess, GameState {guesses = tail allLineups})
+initialGuess = (guess, GameState {guesses = allguesses})
+    where
+        guess = allLineups !! (calculateGuess allLineups)
+        allguesses = delete guess allLineups
 
 
 nextGuess :: ([Person], GameState) -> (Int, Int, Int, Int) -> ([Person], GameState)
-nextGuess (prevGuess, gs) score = (head newGuesses, newGs)
+nextGuess (prevGuess, gs) score = (calGuess, GameState {guesses = allGuesses})
     where
-        newGuesses = [x | x <- guesses gs, feedback prevGuess x == score]
-        newGs = GameState {guesses = tail newGuesses}
+        potGuesses = [x | x <- guesses gs, feedback prevGuess x == score]
+        calGuess = potGuesses !! (findMin [calculate (frequency [feedback x y | y <- potGuesses]) | x <- potGuesses])
+        allGuesses = delete calGuess potGuesses
