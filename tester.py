@@ -3,24 +3,19 @@ import time
 import itertools
 import subprocess
 
-
 height = [i for i in "ST"]
 hair = [i for i in "BRD"]
 sex = [i for i in "MF"]
-
-# all available pair combinations
-def combinations():
-
-    lst = [(h + c + g) for h in height for c in hair for g in sex]
-
-    return [" ".join(item) for item in itertools.combinations(lst, 2)]
-
+NUM = 2
 
 def main():
 
     start_time = time.time()
 
-    args = combinations()
+    # all available pair combinations
+    lst = [(h + c + g) for h in height for c in hair for g in sex]
+    args = [" ".join(item) for item in itertools.combinations(lst, NUM)]
+
     results = []
     testcount = 0
 
