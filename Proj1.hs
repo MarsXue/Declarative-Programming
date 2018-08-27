@@ -1,7 +1,7 @@
 --  File     : Proj1.hs
---  Author   : Wenqing Xue
+--  Author   : Wenqing Xue (wenqingx)
 --  Origin   : Sat Aug 18 2018
---  Purpose  : Program for project 1
+--  Purpose  : Guess the correct lineup as less as possible
 
 module Proj1 (Person, parsePerson, height, hair, sex,
               GameState, initialGuess, nextGuess, feedback) where
@@ -9,63 +9,55 @@ module Proj1 (Person, parsePerson, height, hair, sex,
 import Data.List
 import Data.Ord
 
+-- Person contains: height (Height), hair colour (Hair), gender (Sex)
 data Person = Person Height Hair Sex
     deriving (Show, Eq, Ord)
 
+-- Height contains: short (S), tall (T)
 data Height = S | T
     deriving (Show, Eq, Ord, Enum, Read)
 
+-- Hair colour contains: blonde (B), redhead (R), dark haired (D)
 data Hair = B | R | D
     deriving (Show, Eq, Ord, Enum, Read)
 
+-- Gender contains: male (M), female (F)
 data Sex = M | F
     deriving (Show, Eq, Ord, Enum, Read)
 
--- game state information
+-- Game state information contains: list of all possible lineups
 data GameState = GameState {guesses :: [[Person]]} deriving (Show)
 
+-- List all the possible lineups
+lineups :: [[Person]]
+lineups = [[a, b] | a <- persons, b <- persons, a < b]
+    where persons = [Person h c g | h <- [S, T], c <- [B, R, D], g <- [M, F]]
 
-allLineups :: [[Person]]
-allLineups = [[a, b] | a <- allPersons, b <- allPersons, a < b]
-    where allPersons = [Person h c g | h <- [S, T], c <- [B, R, D], g <- [M, F]]
+-- Return the count if two inputs are matched
+match :: Eq t => [t] -> [t] -> Int
+match [] _ = 0
+match _ [] = 0
+match (x:xs) ys
+    | x `elem` ys = 1 + match xs (delete x ys)
+    | otherwise = match xs ys
 
-
-checkMatch :: Eq t => [t] -> [t] -> Int
-checkMatch [] _ = 0
-checkMatch (x:xs) ys
-    | elem x ys = 1 + checkMatch xs (delete x ys)
-    | otherwise = checkMatch xs ys
-
-
-checkEqual :: [Person] -> [Person] -> Int
-checkEqual (a:b:[]) (x:y:[]) = if p > q then p else q
-  where
-      p = equalPerson a x + equalPerson b y
-      q = equalPerson a y + equalPerson b x
-
-
-equalPerson :: Person -> Person -> Int
-equalPerson (Person a b c) (Person x y z)
-    | (a == x) && (b == y) && (c == z) = 1
-    | otherwise = 0
-
-
+-- Take a three-character string and returns Just person
 parsePerson :: String -> Maybe Person
 parsePerson (h:c:g:[])
     | checkValid = Just (Person (read [h]) (read [c]) (read [g]))
     | otherwise = Nothing
-        where
-            checkValid = (elem h "ST") && (elem c "BRD") && (elem g "MF")
+    where
+        checkValid = (h `elem` "ST") && (c `elem` "BRD") && (g `elem` "MF")
 
-
+-- Return the person's height
 height :: Person -> Height
 height (Person h _ _) = h
 
-
+-- Return the person's hair colour
 hair :: Person -> Hair
 hair (Person _ c _) = c
 
-
+-- Return the person's sex
 sex :: Person -> Sex
 sex (Person _ _ g) = g
 
@@ -87,25 +79,26 @@ findMin xs
     | otherwise = 1 + findMin (tail xs)
 
 
+-- Return the correct suspect, heights, hair colours and sexes in order
 feedback :: [Person] -> [Person] -> (Int, Int, Int, Int)
-feedback (a:b:[]) (x:y:[]) = (np, nh, nc, ng)
+feedback xs ys = (nPerson, nHeight, nHair, nSex)
     where
-        np = checkEqual (a:b:[]) (x:y:[])
-        nh = checkMatch (height a : [height b]) (height x : [height y]) - np
-        nc = checkMatch (hair a : [hair b]) (hair x : [hair y]) - np
-        ng = checkMatch (sex a : [sex b]) (sex x : [sex y]) - np
+        nPerson = match xs ys
+        nHeight = match [height x | x <- xs] [height y | y <- ys] - nPerson
+        nHair   = match [hair x | x <- xs] [hair y | y <- ys] - nPerson
+        nSex    = match [sex x | x <- xs] [sex y | y <- ys] - nPerson
 
-
+-- Return the initial lineup guess and initial game state
 initialGuess :: ([Person], GameState)
-initialGuess = (guess, GameState {guesses = allguesses})
+initialGuess = (guess, GameState {guesses = allGuesses})
     where
-        guess = allLineups !! (calculateGuess allLineups)
-        allguesses = delete guess allLineups
+        guess = lineups !! (expNum lineups)
+        allGuesses = delete guess lineups
 
-
+-- Return the next lineup guess and new game state
 nextGuess :: ([Person], GameState) -> (Int, Int, Int, Int) -> ([Person], GameState)
-nextGuess (prevGuess, gs) score = (calGuess, GameState {guesses = allGuesses})
+nextGuess (oldGuess, gs) score = (newGuess, GameState {guesses = allGuesses})
     where
-        potGuesses = [x | x <- guesses gs, feedback prevGuess x == score]
-        calGuess = potGuesses !! (findMin [calculate (frequency [feedback x y | y <- potGuesses]) | x <- potGuesses])
-        allGuesses = delete calGuess potGuesses
+        posGuesses = [x | x <- guesses gs, feedback oldGuess x == score]
+        newGuess = posGuesses !! (expNum posGuesses)
+        allGuesses = delete newGuess posGuesses
