@@ -17,12 +17,12 @@ def main():
     args = [" ".join(item) for item in itertools.combinations(lst, NUM)]
 
     results = []
-    testcount = 0
+
+    os.system('ghc -O2 --make Proj1Test')
 
     for arg in args:
         last = subprocess.getoutput(os.getcwd() + '/Proj1Test ' + arg)
         print(last)
-        testcount += 1
         results.append(int(str(last).split("\n")[-1].split(' ')[-2]))
 
     print("Score: %.15f guesses" % (sum(results) / len(results)))
