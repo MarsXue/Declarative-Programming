@@ -61,23 +61,13 @@ hair (Person _ c _) = c
 sex :: Person -> Sex
 sex (Person _ _ g) = g
 
--- count the frequency
-frequency :: Ord a => [a] -> [Int]
-frequency lst = map (\x -> length x) . group . sort $ lst
-
--- calculate the expected number
-calculate :: [Int] -> Double
-calculate lst = (fromIntegral (sum [x * x | x <- lst])) / (fromIntegral (sum lst))
-
-calculateGuess guesses = findMin [calculate (frequency [feedback x y | y <- guesses]) | x <- guesses]
-
--- find the index of minimum value
-findMin :: Ord a => [a] -> Int
-findMin [] = 0
-findMin xs
-    | head xs == minimum xs = 0
-    | otherwise = 1 + findMin (tail xs)
-
+-- Calculate the expected number of remaining possible lineups
+expNum :: [[Person]] -> Int
+expNum ls = minIndex [calculation (frequency [feedback x y | y <- ls]) | x <- ls]
+    where
+        minIndex lst = head $ filter ((== minimum lst) . (lst !!)) [0..]
+        frequency lst = map (\x -> length x) . group . sort $ lst
+        calculation lst = (fromIntegral (sum [x * x | x <- lst])) / (fromIntegral (sum lst))
 
 -- Return the correct suspect, heights, hair colours and sexes in order
 feedback :: [Person] -> [Person] -> (Int, Int, Int, Int)
