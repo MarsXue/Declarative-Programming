@@ -57,7 +57,7 @@ read_line(Stream, Line, Last) :-
     (   Char = end_of_file
     ->  Line = [],
         Last = true
-    ; 	Char = '\n'
+    ;   Char = '\n'
     ->  Line = [],
         Last = false
     ;   Line = [Char|Line1],
@@ -194,12 +194,12 @@ get_slots_from_row(Row, Slots) :-
 get_slots_from_row([], Acc, [Acc]).
 get_slots_from_row([E|Es], Acc, Slots) :-
     % Checks if that the element is the hash symbol.
-    ( 	E == '#' 
-    ->	% Adds the complete slot Acc into Slots.
+    (   E == '#' 
+    ->  % Adds the complete slot Acc into Slots.
         Slots = [Acc|NewSlots],
         % Sets the accumulator into empty list.
         get_slots_from_row(Es, [], NewSlots)
-    ;	% Otherwise, adds element into NewAcc.
+    ;   % Otherwise, adds element into NewAcc.
         append(Acc, [E], NewAcc),
         % Executes the recursion to get next element.
         get_slots_from_row(Es, NewAcc, Slots)
@@ -283,11 +283,11 @@ get_next_slot([Slot|Slots], WordList, BestSlot, TemSlot, MinCount) :-
     count_slot_candidates(Slot, WordList, Count),
     % Checks if the current count is smaller than minimum count.
     (	Count < MinCount 
-    ->	% Replaces the minimum count with the current count.
+    ->  % Replaces the minimum count with the current count.
         NewMinCount = Count,
         % Replaces the temporary best slot with the current slot.
         NewTemSlot = Slot
-    ;  	% Keeps the minimum count for the next recursion/
+    ;   % Keeps the minimum count for the next recursion/
         NewMinCount = MinCount,
         % Keeps the temporary best slot for the next recursion.
         NewTemSlot = TemSlot
@@ -310,8 +310,8 @@ count_slot_candidates(Slot, WordList, Count) :-
 count_slot_candidates(_, [], Acc, Acc).
 count_slot_candidates(Slot, [Word|Words], Acc, Count) :-
     % Checks if that Slot and Word can unify
-    (	unifiable(Slot, Word, _)
-    ->	% Accumulator adds 1 if condition satisfies
+    (   unifiable(Slot, Word, _)
+    ->  % Accumulator adds 1 if condition satisfies
         NewAcc is Acc + 1
     ;   NewAcc is Acc
     ), 
